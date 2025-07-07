@@ -37,7 +37,7 @@ app.get('/cuestionario', (req, res) => {
 app.post('/agregar', (req, res) => {
   const { name, id } = req.body;
   const date = new Date().toISOString();
-  const nuevo = `\n${name},${id},0,0,${date}`;
+  const nuevo = `\n${id},${name},0,0,${date}`;
   
   fs.appendFile(CSV_PATH, nuevo, (err) => {
     if (err) return res.status(500).send('Error al guardar');
@@ -56,9 +56,10 @@ app.post('/actualizar', (req, res) => {
   fs.createReadStream(filePath)
     .pipe(csv())
     .on('data', (data) => {
+      if (!data.id?.trim()) return;
       if (data.id === id) {
         data.puntos = puntos;
-        data.intentos = intentos;
+        data.intentos = intentos;        
       }
       usuarios.push(data);
     })
@@ -70,6 +71,7 @@ app.post('/actualizar', (req, res) => {
           { id: 'name', title: 'name' },
           { id: 'puntos', title: 'puntos' },
           { id: 'intentos', title: 'intentos' },
+          { id: 'date', title: 'date' }
         ],
       });
 

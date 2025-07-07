@@ -1,8 +1,8 @@
 
-let user = {userId:null, puntajeTotal: 0}; // Simulación de usuario
+let user = {id:null, puntajeTotal: 0}; // Simulación de usuario
 let listOfUsers = []; // Lista de usuarios
 let lenguaje = 'es'; // Idioma por defecto
-let isLoggedIn = !!user?.userId ;
+let isLoggedIn = !!user?.id ;
 
 const stateListeners = [];
 const quiz=[];
@@ -13,6 +13,7 @@ const appState = new Proxy(
     lenguaje: 'es',
     puntos: 0,
     intentos: 0,
+    date: new Date().toISOString(),
   },
   {
     set(target, prop, value) {
@@ -61,7 +62,7 @@ onAppStateChange((key, value) => {
     renderNavbar();
   }
    const spinBtn = document.getElementById("spinButton");
-    if (value && value.userId) {
+    if (value && value.id) {
       spinBtn.style.display = "block";
     } else {
       spinBtn.style.display = "none";
@@ -111,7 +112,7 @@ function renderNavbar() {
             ? lenguaje === "es"
               ? "Bienvenido al hackatón 2025"
               : "Welcome to the Hackathon 2025"
-            : `<strong>ID de empleado:</strong> ${appState.user.userId} <strong>Score:</strong> <span id="score">${appState.user.puntos}</span>`
+            : `<strong>ID de empleado:</strong> ${appState.user.id} <strong>Puntos:</strong> <span id="score">${appState.user.puntos}</span>  <strong>Intentos:</strong> <span id="attempts">${appState.user.intentos}</span>`
         }
       </strong>
     </div>
@@ -153,6 +154,7 @@ function renderNavbar() {
     logoutBtn.addEventListener("click", () => {
       appState.user = null;
       appState.puntos = 0;
+      appState.intentos = 0;
       renderNavbar();
     });
   }
@@ -305,12 +307,7 @@ modal.innerHTML = `
       
       const getUser = listOfUsers.find(u => u.id === usuario);
       console.log("getUser", getUser);
-      appState.user = {
-        userId: getUser.id,
-        name: getUser.name,
-        puntos: parseInt(getUser.puntos) || 0,
-        intentos: parseInt(getUser.intentos) || 0,
-        };
+      appState.user = getUser;
 
       listOfUsers.push(usuario);
       modal.remove();
@@ -336,15 +333,14 @@ function onLogin( usuario ) {
   })
   .then(res => {
     if (res.ok) {
-      alert(`¡Usuario ${usuario.id} agregado exitosamente!`);
       appState.user = {
-        userId: usuario.id,
+        id: usuario.id,
         name: usuario.name,
-        puntos: 0
+        puntos: 0,
+        intentos: 0
       };
 
-      // Opcional: recargar tabla si estás en la vista principal
-      location.reload();
+
     } else {
       alert("Error al agregar usuario");
     }
@@ -384,35 +380,43 @@ function createSpiral(total, startRadius, radiusStep, startAngle, angleStep, sta
 
 createSpiral(36, 60, 9, Math.PI * 1.5, 0.45, 1, 500, 10);
 
-// Spin logic
-const spinButton = document.getElementById('spinButton');
-const resultDisplay = document.getElementById('result');
 let isSpinning = false;
+const resultDisplay = document.getElementById('result');
+const spinButton = document.getElementById('spinButton');
 
 spinButton.addEventListener('click', () => {
+  if (isSpinning) return;
 
-   if (appState.user.intentos >= 3) {
+
+
+  if (appState.user.intentos<3) {
+  
+    renderNavbar();
+    iniciarGiro(); // 🎯 Gira directo
+  } else {
+    // Mostrar popup y solo girar si acepta
     mostrarPopupPago(() => {
       if (appState.user.puntos >= 100) {
         appState.user.puntos -= 100;
         appState.user.intentos += 1;
+        actualizarUsuario(appState.user);
         renderNavbar();
-        spinButton.click(); // Reiniciar el giro
+        iniciarGiro(); // 🎯 Solo gira si acepta
       } else {
         alert("No tienes suficientes puntos para girar.");
-        return;
-
       }
     });
   }
+});
 
+
+
+function iniciarGiro() {
   if (isSpinning) return;
- 
-  
   isSpinning = true;
   resultDisplay.textContent = '';
 
-  const totalSteps = Math.floor(Math.random() * 20) ;
+  const totalSteps = Math.floor(Math.random() * 20);
   let currentIndex = 0;
   let step = 0;
   let delay = 100;
@@ -432,58 +436,44 @@ spinButton.addEventListener('click', () => {
 
       let result = parseInt(circle.querySelector('span').textContent);
       resultDisplay.textContent = '';
+
       const activelenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
 
-  // Asume que ya existe: const quiz = [...] (la lista de preguntas precargadas)
-  result=1;
-  const pregunta = quiz.find(p => +p.index === 1 && p.lenguaje === activelenguaje);
+      // FORZADO A RESULT = 1 (puedes eliminar esta línea si ya estás girando realmente)
+      result = 1;
 
+      const pregunta = quiz.find(p => +p.index === result && p.lenguaje === activelenguaje);
+      const popup = document.getElementById("popup-number");
 
-  const popup = document.getElementById("popup-number");
+      if (!pregunta) {
+        popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
+      } else {
+        popup.innerHTML = `
+          🎯 Número: <strong>${result}</strong><br><br>
+          <strong>${pregunta["pregunta"]}</strong><br>
+          <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
+          <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
+          <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
+        `;
 
-if (!pregunta) {
-  popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
-} else {
-  popup.innerHTML = `
-    🎯 Número: <strong>${result}</strong><br><br>
-    <strong>${pregunta["pregunta"]}</strong><br>
-    <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
-    <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
-    <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
-  `;
+        ["a", "b", "c"].forEach(op => {
+          document.getElementById(`btn-${op}`).addEventListener("click", () => {
+            window.evaluarRespuesta({
+              seleccionada: op,
+              correcta: pregunta["correcta"],
+              puntos: parseInt(pregunta["puntos"]),
+            });
+          });
+        });
+      }
 
-  document.getElementById("btn-a").addEventListener("click", () => {
-    window.evaluarRespuesta({
-      seleccionada: 'a',
-      correcta: pregunta["correcta"],
-      puntos: parseInt(pregunta["puntos"]),
-    });
-  });
-
-  document.getElementById("btn-b").addEventListener("click", () => {
-    window.evaluarRespuesta({
-      seleccionada: 'b',
-      correcta: pregunta["correcta"],
-      puntos: parseInt(pregunta["puntos"]),
-    });
-  });
-
-  document.getElementById("btn-c").addEventListener("click", () => {
-    window.evaluarRespuesta({
-      seleccionada: 'c',
-      correcta: pregunta["correcta"],
-      puntos: parseInt(pregunta["puntos"]),
-    });
-  });
-}
-
-document.getElementById("popup").classList.remove("hidden");
-
+      document.getElementById("popup").classList.remove("hidden");
     }
   }
 
   highlightNext();
-});
+}
+
 
 document.getElementById("popup-close").addEventListener("click", () => {
   document.getElementById("popup").classList.add("hidden");
@@ -496,28 +486,32 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
   popup.innerHTML = "";
   const isCorrect = seleccionada === correcta;
   let mensaje = "";
+ 
 
   if (isCorrect) {
     appState.user.puntos += puntos;
     appState.user.intentos += 1;
-
     mensaje = `✅ ¡Correcto! Ganaste ${puntos} punto(s).<br>`;
-    actualizarUsuario({ 
-  userId: appState.user.userId, 
-  puntajeTotal: appState.user.puntos, 
-  intentos: appState.user.intentos 
-});
-  renderNavbar();
+    renderNavbar();
 
   } else {
-    mensaje = `❌ Incorrecto. </strong>".<br>`;
+    mensaje = `❌ <strong>Incorrecto. </strong>.<br>`;
     const img = document.createElement("img");
     img.src = "assets/perro.jpg";
     img.alt = "Perro triste";
     img.style.width = "150px";
     img.style.marginTop = "10px";
     popup.appendChild(img);
+    appState.user.intentos += 1;
+    renderNavbar();
   }
+  
+      actualizarUsuario({ 
+  id: appState.user.id, 
+  puntajeTotal: appState.user.puntos, 
+  intentos: appState.user.intentos,
+  ...appState.user
+});
 
   const resultado = document.createElement("div");
   resultado.innerHTML = "<br>" + mensaje + `Puntaje acumulado: <strong>${appState?.user?.puntos || 0}</strong>`;
@@ -525,11 +519,11 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
 };
 
 
-function actualizarUsuario({ userId, puntajeTotal, intentos }) {
+function actualizarUsuario( newState) {
   fetch('/actualizar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: userId, puntos: puntajeTotal, intentos })
+    body: JSON.stringify(newState)
   })
     .then(res => {
       if (!res.ok) throw new Error("No se pudo actualizar el usuario");
