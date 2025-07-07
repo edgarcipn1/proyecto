@@ -63,26 +63,28 @@
     transform: translate(-50%, -50%) scale(1.1);
     cursor: pointer;
   }
+#spinButton {
+  display: none; /* visible solo si está logeado */
+  margin: 20px auto 0;
+  display: block;
+  padding: 12px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: orangered;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 
-
-  #spinButton {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 18px;
-    background: #ff6f00;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.1s ease;
-    position: absolute;
-    bottom: 15%;
-  }
-
-  #spinButton:hover {
-    background: #e65100;
-  }
-
+#spinButton:hover {
+  background-color: #a80026;
+}
   #result {
     margin-top: 15px;
     font-size: 20px;

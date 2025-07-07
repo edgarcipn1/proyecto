@@ -5,11 +5,13 @@ let lenguaje = 'es'; // Idioma por defecto
 let isLoggedIn = !!user?.userId ;
 
 const stateListeners = [];
+const quiz=[];
 
 const appState = new Proxy(
   {
     user: null,
-    lenguaje: 'es'
+    lenguaje: 'es',
+    puntos: 0
   },
   {
     set(target, prop, value) {
@@ -40,12 +42,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+      // Cargar usuarios desde el backend
+  fetch('/cuestionario')
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(item => {
+        quiz.push(item);
+      });
+    });
+
+
 });
+
+
 
 onAppStateChange((key, value) => {
   if (key === 'user' || key === 'lenguaje') {
     renderNavbar();
   }
+   const spinBtn = document.getElementById("spinButton");
+    if (value && value.userId) {
+      spinBtn.style.display = "block";
+    } else {
+      spinBtn.style.display = "none";
+    }
 });
 
 
@@ -60,7 +80,6 @@ function renderNavbar() {
   if (navbarOld) navbarOld.remove();
 
   const isLoggedIn = !!appState.user;
-  console.log("isLoggedIn:", appState.user);
 
 
 
@@ -279,7 +298,7 @@ modal.innerHTML = `
      appState.user = {
         userId: getUser.id,
         name: getUser.name,
-        puntos: getUser.puntos || 0
+        puntos: parseInt(getUser.puntos) || 0
         };
 
       listOfUsers.push(usuario);
@@ -321,20 +340,17 @@ function onLogin( usuario ) {
 
 
 
-
+// Crear espiral
 const board = document.querySelector('.board');
 const circles = [];
 
 function createSpiral(total, startRadius, radiusStep, startAngle, angleStep, startNumber, pointStart, pointStep) {
   for (let i = 0; i < total; i++) {
     const reversedIndex = total - 1 - i;
-
     const radius = startRadius + reversedIndex * radiusStep;
     const angle = startAngle + reversedIndex * angleStep;
-
     const centerX = 350;
     const centerY = 350;
-
     const x = centerX + radius * Math.cos(angle);
     const y = centerY + radius * Math.sin(angle);
 
@@ -352,32 +368,20 @@ function createSpiral(total, startRadius, radiusStep, startAngle, angleStep, sta
   }
 }
 
-createSpiral(
-  36,                // total de círculos
-  60,                // radio inicial
-  9,                 // incremento de radio
-  Math.PI * 1.5,     // ángulo inicial
-  0.45,              // paso angular
-  1,                 // número inicial
-  500,               // puntos iniciales
-  10                 // decremento de puntos
-);
 
+createSpiral(36, 60, 9, Math.PI * 1.5, 0.45, 1, 500, 10);
+
+// Spin logic
 const spinButton = document.getElementById('spinButton');
 const resultDisplay = document.getElementById('result');
 let isSpinning = false;
-
-// VARIABLES DE JUEGO (define antes o pásalas desde otro archivo)
-const preguntas = window.preguntas || []; // asegúrate de que esté definida
-const activelenguaje = window.activelenguaje || 'es'; 
-const updateScore = window.updateScore || function () {};
 
 spinButton.addEventListener('click', () => {
   if (isSpinning) return;
   isSpinning = true;
   resultDisplay.textContent = '';
 
-  const totalSteps = Math.floor(Math.random() * 20) + 0;
+  const totalSteps = Math.floor(Math.random() * 20);
   let currentIndex = 0;
   let step = 0;
   let delay = 100;
@@ -394,37 +398,56 @@ spinButton.addEventListener('click', () => {
       setTimeout(highlightNext, delay);
     } else {
       isSpinning = false;
-      //const result = circle.querySelector('span').textContent;
-      const result=1;
-      resultDisplay.textContent = ``;
 
-      // Mostramos el popup con la pregunta
-      const pregunta = preguntas.find(p => +p["index"] === +result && p["lenguaje"] === activelenguaje);
-      const popup = document.getElementById("popup-number");
+      let result = parseInt(circle.querySelector('span').textContent);
+      resultDisplay.textContent = '';
+      const activelenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
 
-      if (!pregunta) {
-        popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
-      } else {
-        popup.innerHTML = `
-          🎯 Número: <strong>${result}</strong><br><br>
-          <strong>${pregunta["pregunta"]}</strong><br>
-          <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
-          <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
-          <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
-        `;
+  // Asume que ya existe: const quiz = [...] (la lista de preguntas precargadas)
+  result=1;
+  const pregunta = quiz.find(p => +p.index === 1 && p.lenguaje === 'es');
 
-        document.getElementById("btn-a").addEventListener("click", () => {
-          window.evaluarRespuesta({ seleccionada: 'a', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
-        });
-        document.getElementById("btn-b").addEventListener("click", () => {
-          window.evaluarRespuesta({ seleccionada: 'b', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
-        });
-        document.getElementById("btn-c").addEventListener("click", () => {
-          window.evaluarRespuesta({ seleccionada: 'c', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
-        });
-      }
 
-      document.getElementById("popup").classList.remove("hidden");
+  const popup = document.getElementById("popup-number");
+
+if (!pregunta) {
+  popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
+} else {
+  popup.innerHTML = `
+    🎯 Número: <strong>${result}</strong><br><br>
+    <strong>${pregunta["pregunta"]}</strong><br>
+    <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
+    <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
+    <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
+  `;
+
+  document.getElementById("btn-a").addEventListener("click", () => {
+    window.evaluarRespuesta({
+      seleccionada: 'a',
+      correcta: pregunta["correcta"],
+      puntos: parseInt(pregunta["puntos"]),
+    });
+  });
+
+  document.getElementById("btn-b").addEventListener("click", () => {
+    window.evaluarRespuesta({
+      seleccionada: 'b',
+      correcta: pregunta["correcta"],
+      puntos: parseInt(pregunta["puntos"]),
+    });
+  });
+
+  document.getElementById("btn-c").addEventListener("click", () => {
+    window.evaluarRespuesta({
+      seleccionada: 'c',
+      correcta: pregunta["correcta"],
+      puntos: parseInt(pregunta["puntos"]),
+    });
+  });
+}
+
+document.getElementById("popup").classList.remove("hidden");
+
     }
   }
 
@@ -435,24 +458,26 @@ document.getElementById("popup-close").addEventListener("click", () => {
   document.getElementById("popup").classList.add("hidden");
 });
 
-
-
-
-window.evaluarRespuesta = function ({ seleccionada, correcta, puntos, updateScore, user }) {
+window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
   const popup = document.getElementById("popup-number");
   if (!popup) return;
 
   popup.innerHTML = "";
-
   const isCorrect = seleccionada === correcta;
   let mensaje = "";
 
   if (isCorrect) {
-    user.puntajeTotal += parseInt(puntos) || 0;
-    updateScore(user.puntajeTotal);
+    appState.user.puntos += puntos;
     mensaje = `✅ ¡Correcto! Ganaste ${puntos} punto(s).<br>`;
+    actualizarUsuario({ 
+  userId: appState.user.userId, 
+  puntajeTotal: appState.user.puntajeTotal, 
+  intentos: appState.user.intentos 
+});
+  renderNavbar();
+
   } else {
-    mensaje = `❌ Incorrecto. La respuesta correcta era "<strong>${correcta.toUpperCase()}</strong>".<br>`;
+    mensaje = `❌ Incorrecto. </strong>".<br>`;
     const img = document.createElement("img");
     img.src = "assets/perro.jpg";
     img.alt = "Perro triste";
@@ -462,8 +487,26 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos, updateScor
   }
 
   const resultado = document.createElement("div");
-  resultado.innerHTML = "<br>" + mensaje + `Puntaje acumulado: <strong>${user.puntajeTotal}</strong>`;
+  resultado.innerHTML = "<br>" + mensaje + `Puntaje acumulado: <strong>${appState?.user?.puntos || 0}</strong>`;
   popup.appendChild(resultado);
 };
 
+
+function actualizarUsuario({ userId, puntajeTotal, intentos }) {
+  fetch('/actualizar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: userId, puntos: puntajeTotal, intentos })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("No se pudo actualizar el usuario");
+      return res.json();
+    })
+    .then(data => {
+      console.log("Usuario actualizado:", data);
+    })
+    .catch(err => {
+      console.error("Error actualizando usuario:", err);
+    });
+}
 
