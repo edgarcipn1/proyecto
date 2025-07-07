@@ -11,7 +11,8 @@ const appState = new Proxy(
   {
     user: null,
     lenguaje: 'es',
-    puntos: 0
+    puntos: 0,
+    intentos: 0,
   },
   {
     set(target, prop, value) {
@@ -37,8 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
       data.forEach(user => {
-        const {id,puntos} = user;
-        listOfUsers.push({id,puntos});
+        listOfUsers.push(user);
       });
     });
 
@@ -118,8 +118,8 @@ function renderNavbar() {
     <div class="navbar-right">
       ${
         !isLoggedIn
-          ? `<button class="button-login">${lenguaje === "es" ? "Ingresar" : "Login"}</button>`
-          : ""
+          ? `<button class="button-login"> Login</button>`
+          : `<button class="button-logout">Logout</button>`
       }
     </div>
   `;
@@ -146,6 +146,14 @@ function renderNavbar() {
   if (loginBtn) {
     loginBtn.addEventListener("click", () => {
       crearPopupLogin(appState.lenguaje, onLogin);
+    });
+  }
+  const logoutBtn = document.querySelector(".button-logout");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      appState.user = null;
+      appState.puntos = 0;
+      renderNavbar();
     });
   }
 }
@@ -294,11 +302,14 @@ modal.innerHTML = `
       const error = document.getElementById("login-error");
       error.style.display = "block";
     } else if (usersList.includes(usuario)) {
+      
       const getUser = listOfUsers.find(u => u.id === usuario);
-     appState.user = {
+      console.log("getUser", getUser);
+      appState.user = {
         userId: getUser.id,
         name: getUser.name,
-        puntos: parseInt(getUser.puntos) || 0
+        puntos: parseInt(getUser.puntos) || 0,
+        intentos: parseInt(getUser.intentos) || 0,
         };
 
       listOfUsers.push(usuario);
@@ -308,6 +319,8 @@ modal.innerHTML = `
       onLogin({ 
         id: usuario,
         name: name,
+        puntos: 0,
+        intentos: 0,
       });
     }
   };
@@ -377,11 +390,29 @@ const resultDisplay = document.getElementById('result');
 let isSpinning = false;
 
 spinButton.addEventListener('click', () => {
+
+   if (appState.user.intentos >= 3) {
+    mostrarPopupPago(() => {
+      if (appState.user.puntos >= 100) {
+        appState.user.puntos -= 100;
+        appState.user.intentos += 1;
+        renderNavbar();
+        spinButton.click(); // Reiniciar el giro
+      } else {
+        alert("No tienes suficientes puntos para girar.");
+        return;
+
+      }
+    });
+  }
+
   if (isSpinning) return;
+ 
+  
   isSpinning = true;
   resultDisplay.textContent = '';
 
-  const totalSteps = Math.floor(Math.random() * 20);
+  const totalSteps = Math.floor(Math.random() * 20) ;
   let currentIndex = 0;
   let step = 0;
   let delay = 100;
@@ -405,7 +436,7 @@ spinButton.addEventListener('click', () => {
 
   // Asume que ya existe: const quiz = [...] (la lista de preguntas precargadas)
   result=1;
-  const pregunta = quiz.find(p => +p.index === 1 && p.lenguaje === 'es');
+  const pregunta = quiz.find(p => +p.index === 1 && p.lenguaje === activelenguaje);
 
 
   const popup = document.getElementById("popup-number");
@@ -468,10 +499,12 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
 
   if (isCorrect) {
     appState.user.puntos += puntos;
+    appState.user.intentos += 1;
+
     mensaje = `✅ ¡Correcto! Ganaste ${puntos} punto(s).<br>`;
     actualizarUsuario({ 
   userId: appState.user.userId, 
-  puntajeTotal: appState.user.puntajeTotal, 
+  puntajeTotal: appState.user.puntos, 
   intentos: appState.user.intentos 
 });
   renderNavbar();
@@ -508,5 +541,43 @@ function actualizarUsuario({ userId, puntajeTotal, intentos }) {
     .catch(err => {
       console.error("Error actualizando usuario:", err);
     });
+}
+
+
+function mostrarPopupPago(onConfirmar) {
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.top = '0';
+  popup.style.left = '0';
+  popup.style.width = '100vw';
+  popup.style.height = '100vh';
+  popup.style.background = 'rgba(0,0,0,0.6)';
+  popup.style.display = 'flex';
+  popup.style.justifyContent = 'center';
+  popup.style.alignItems = 'center';
+  popup.style.zIndex = '2000';
+
+  popup.innerHTML = `
+    <div style="background:white; padding:30px; border-radius:10px; max-width:350px; text-align:center;">
+      <h3 style="color:#c5002e;">⚠️ Atención</h3>
+      <p>Has consumido tus giros gratis.<br>¿Deseas girar por <strong>100 puntos</strong>?</p>
+      <div style="margin-top:20px; display:flex; justify-content:space-around;">
+        <button id="popup-cancelar" style="padding:8px 16px;">Cancelar</button>
+        <button id="popup-confirmar" style="padding:8px 16px; background-color:#c5002e; color:white; border:none;">Girar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  document.getElementById("popup-cancelar").onclick = () => {
+    popup.remove();
+  };
+
+  document.getElementById("popup-confirmar").onclick = () => {
+    popup.remove();
+    onConfirmar();
+     // Ejecutar la acción de confirmación
+  };
 }
 

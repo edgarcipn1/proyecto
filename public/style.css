@@ -97,7 +97,6 @@
     background: #ffca28;
     border-color: #f57f17;
     transform: translate(-50%, -50%) scale(1.2);
-    z-index: 10;
   }
 
 .popup {
@@ -110,6 +109,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
   
 }
 
@@ -187,7 +187,7 @@
   border: 2px solid #d32f2f;
   padding: 2px;
 }
-.button-login {
+.button-login, .button-logout {
   background-color: transparent;
   color: #fff;
   border: 2px solid #fff;
@@ -207,18 +207,18 @@
 }
 
 
-.button-login:hover {
+.button-login, .button-logout :hover {
   background-color: #fff;
   color: #c62828; /* rojo profundo para resaltar */
 }
 
-.button-login:focus {
+.button-login, .button-logout :focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
 }
 
 
-.button-login:focus {
+.button-login, .button-logout :focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.4);
 }
