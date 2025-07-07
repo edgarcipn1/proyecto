@@ -1,0 +1,469 @@
+
+let user = {userId:null, puntajeTotal: 0}; // Simulación de usuario
+let listOfUsers = []; // Lista de usuarios
+let lenguaje = 'es'; // Idioma por defecto
+let isLoggedIn = !!user?.userId ;
+
+const stateListeners = [];
+
+const appState = new Proxy(
+  {
+    user: null,
+    lenguaje: 'es'
+  },
+  {
+    set(target, prop, value) {
+      target[prop] = value;
+
+      // Notificar a todos los listeners
+      stateListeners.forEach(listener => listener(prop, value));
+      return true;
+    }
+  }
+);
+
+function onAppStateChange(callback) {
+  stateListeners.push(callback);
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Cargar usuarios desde el backend
+  fetch('/usuarios')
+    .then(res => res.json())
+    .then(data => {
+      data.forEach(user => {
+        const {id,puntos} = user;
+        listOfUsers.push({id,puntos});
+      });
+    });
+
+});
+
+onAppStateChange((key, value) => {
+  if (key === 'user' || key === 'lenguaje') {
+    renderNavbar();
+  }
+});
+
+
+
+renderNavbar();
+function renderNavbar() {
+  const container = document.getElementById("navbar-container");
+  if (!container) return;
+
+  // Elimina navbar previo si existe
+  const navbarOld = document.getElementById("navbar");
+  if (navbarOld) navbarOld.remove();
+
+  const isLoggedIn = !!appState.user;
+  console.log("isLoggedIn:", appState.user);
+
+
+
+  // Elimina navbar previo si existe
+  if (navbarOld) navbarOld.remove();
+
+  // Crea el nuevo navbar
+  const navbar = document.createElement("div");
+  navbar.id = "navbar";
+  navbar.style.display = "flex";
+  navbar.style.justifyContent = "space-between";
+  navbar.style.alignItems = "center";
+  navbar.style.background = "#d32f2f";
+  navbar.style.color = "white";
+  navbar.style.padding = "10px 20px";
+  navbar.style.fontFamily = "Arial, sans-serif";
+  navbar.style.fontSize = "16px";
+
+
+  navbar.innerHTML = `
+    <div class="navbar-left">
+      <img src="assets/mx.svg" alt="Español" class="flag" id="flag-mx" title="Español">
+      <img src="assets/us.svg" alt="English" class="flag" id="flag-us" title="English">
+    </div>
+    <div class="navbar-center">
+      <strong id="welcome-message">
+        ${
+          !isLoggedIn
+            ? lenguaje === "es"
+              ? "Bienvenido al hackatón 2025"
+              : "Welcome to the Hackathon 2025"
+            : `<strong>ID de empleado:</strong> ${appState.user.userId} <strong>Score:</strong> <span id="score">${appState.user.puntos}</span>`
+        }
+      </strong>
+    </div>
+    <div class="navbar-right">
+      ${
+        !isLoggedIn
+          ? `<button class="button-login">${lenguaje === "es" ? "Ingresar" : "Login"}</button>`
+          : ""
+      }
+    </div>
+  `;
+
+  container.appendChild(navbar);
+
+  // Activar bandera seleccionada
+  setActiveFlag(lenguaje);
+
+  // Listeners de idioma
+  document.getElementById("flag-mx").addEventListener("click", () => {
+      setActiveFlag('es');
+
+  
+  });
+
+  document.getElementById("flag-us").addEventListener("click", () => {
+  setActiveFlag('en');
+
+  
+  });
+
+    const loginBtn = document.querySelector(".button-login");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      crearPopupLogin(appState.lenguaje, onLogin);
+    });
+  }
+}
+
+function setActiveFlag(lang) {
+  const mx = document.getElementById("flag-mx");
+  const us = document.getElementById("flag-us");
+
+  mx.classList.remove("active-flag");
+  us.classList.remove("active-flag");
+
+  if (lang === "es") mx.classList.add("active-flag");
+  if (lang === "en") us.classList.add("active-flag");
+}
+
+
+function crearPopupLogin(lenguaje = "es", onLogin = () => {}) {
+  //if (document.getElementById("login-modal")) return; // Evitar duplicados
+
+  const textos = {
+    es: {
+      titulo: "Registro a hackatón",
+      usuario: "Id de usuario",
+      name : "Nombre",
+      ingresar: "Ingresar",
+      cerrar: "Cerrar",
+      error: "Por favor ingresa todos los campos.",
+    },
+    en: {
+      titulo: "Sign In",
+      usuario: "Username",
+      name : "Name",
+      ingresar: "Login",
+      cerrar: "Close",
+      error: "Please fill in all fields.",
+    },
+  };
+
+  const t = textos[lenguaje] || textos.es;
+
+  const modal = document.createElement("div");
+  modal.id = "login-modal";
+  modal.style.cssText = `
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease forwards;
+  `;
+
+modal.innerHTML = `
+  <div style="
+    background: white;
+    padding: 28px 32px;
+    border-radius: 12px;
+    min-width: 320px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    animation: scaleIn 0.3s ease;
+  ">
+    <h2 style="
+      margin-top: 0;
+      margin-bottom: 24px;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      color: #c5002e;
+    ">${t.titulo}</h2>
+
+    <label style="font-size: 14px; color: #333;">${t.usuario}</label>
+    <input id="login-clave" 
+      type="number" 
+      inputmode="numeric" 
+      placeholder="●●●●●●●●" 
+      style="
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 16px;
+        border: 1.5px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        outline: none;
+        transition: border 0.3s ease;
+      "
+    />
+    <label style="font-size: 14px; color: #333;">${t.name}</label>
+    <input id="login-name" 
+      type="string" 
+      inputmode="string" 
+      placeholder="name" 
+      style="
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 16px;
+        border: 1.5px solid #ccc;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        outline: none;
+        transition: border 0.3s ease;
+      "
+    />
+    <div id="login-error" style="color: red; display: none; font-size: 13px; margin-bottom: 12px;">${t.error}</div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button id="login-cerrar" style="
+        background: none;
+        border: none;
+        color: #999;
+        font-size: 14px;
+        cursor: pointer;
+      ">${t.cerrar}</button>
+
+      <button id="login-enviar" style="
+        background-color: #c5002e;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      ">${t.ingresar}</button>
+    </div>
+  </div>
+`;
+;
+
+  document.body.appendChild(modal);
+
+  // Eventos
+  document.getElementById("login-cerrar").onclick = () => modal.remove();
+
+  document.getElementById("login-enviar").onclick = () => {
+     const usuario = document.getElementById("login-clave").value.trim();
+    const name =document.getElementById("login-name").value.trim();
+    
+    const usersList = listOfUsers.map(u => u.id);
+
+    if (!usuario || !name) {
+      const error = document.getElementById("login-error");
+      error.style.display = "block";
+    } else if (usersList.includes(usuario)) {
+      const getUser = listOfUsers.find(u => u.id === usuario);
+     appState.user = {
+        userId: getUser.id,
+        name: getUser.name,
+        puntos: getUser.puntos || 0
+        };
+
+      listOfUsers.push(usuario);
+      modal.remove();
+    } else {
+      modal.remove();
+      onLogin({ 
+        id: usuario,
+        name: name,
+      });
+    }
+  };
+
+ 
+}
+
+function onLogin( usuario ) {
+  fetch('/agregar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams( usuario )
+  })
+  .then(res => {
+    if (res.ok) {
+      alert(`¡Usuario ${usuario.id} agregado exitosamente!`);
+      appState.user = {
+        userId: usuario.id,
+        name: usuario.name,
+        puntos: 0
+      };
+
+      // Opcional: recargar tabla si estás en la vista principal
+      location.reload();
+    } else {
+      alert("Error al agregar usuario");
+    }
+  });
+}
+
+
+
+
+const board = document.querySelector('.board');
+const circles = [];
+
+function createSpiral(total, startRadius, radiusStep, startAngle, angleStep, startNumber, pointStart, pointStep) {
+  for (let i = 0; i < total; i++) {
+    const reversedIndex = total - 1 - i;
+
+    const radius = startRadius + reversedIndex * radiusStep;
+    const angle = startAngle + reversedIndex * angleStep;
+
+    const centerX = 350;
+    const centerY = 350;
+
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+
+    const circle = document.createElement('div');
+    circle.className = 'circle';
+    circle.style.left = `${x}px`;
+    circle.style.top = `${y}px`;
+
+    const number = startNumber + i;
+    const points = pointStart - i * pointStep;
+
+    circle.innerHTML = `<span>${number}</span><small>${points}pt</small>`;
+    board.appendChild(circle);
+    circles.push(circle);
+  }
+}
+
+createSpiral(
+  36,                // total de círculos
+  60,                // radio inicial
+  9,                 // incremento de radio
+  Math.PI * 1.5,     // ángulo inicial
+  0.45,              // paso angular
+  1,                 // número inicial
+  500,               // puntos iniciales
+  10                 // decremento de puntos
+);
+
+const spinButton = document.getElementById('spinButton');
+const resultDisplay = document.getElementById('result');
+let isSpinning = false;
+
+// VARIABLES DE JUEGO (define antes o pásalas desde otro archivo)
+const preguntas = window.preguntas || []; // asegúrate de que esté definida
+const activelenguaje = window.activelenguaje || 'es'; 
+const updateScore = window.updateScore || function () {};
+
+spinButton.addEventListener('click', () => {
+  if (isSpinning) return;
+  isSpinning = true;
+  resultDisplay.textContent = '';
+
+  const totalSteps = Math.floor(Math.random() * 20) + 0;
+  let currentIndex = 0;
+  let step = 0;
+  let delay = 100;
+
+  function highlightNext() {
+    circles.forEach(c => c.classList.remove('active'));
+    const circle = circles[currentIndex];
+    circle.classList.add('active');
+
+    if (step < totalSteps) {
+      step++;
+      currentIndex = (currentIndex + 1) % circles.length;
+      delay += 15;
+      setTimeout(highlightNext, delay);
+    } else {
+      isSpinning = false;
+      //const result = circle.querySelector('span').textContent;
+      const result=1;
+      resultDisplay.textContent = ``;
+
+      // Mostramos el popup con la pregunta
+      const pregunta = preguntas.find(p => +p["index"] === +result && p["lenguaje"] === activelenguaje);
+      const popup = document.getElementById("popup-number");
+
+      if (!pregunta) {
+        popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
+      } else {
+        popup.innerHTML = `
+          🎯 Número: <strong>${result}</strong><br><br>
+          <strong>${pregunta["pregunta"]}</strong><br>
+          <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
+          <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
+          <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
+        `;
+
+        document.getElementById("btn-a").addEventListener("click", () => {
+          window.evaluarRespuesta({ seleccionada: 'a', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
+        });
+        document.getElementById("btn-b").addEventListener("click", () => {
+          window.evaluarRespuesta({ seleccionada: 'b', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
+        });
+        document.getElementById("btn-c").addEventListener("click", () => {
+          window.evaluarRespuesta({ seleccionada: 'c', correcta: pregunta["correcta"], puntos: pregunta["puntos"], updateScore, user });
+        });
+      }
+
+      document.getElementById("popup").classList.remove("hidden");
+    }
+  }
+
+  highlightNext();
+});
+
+document.getElementById("popup-close").addEventListener("click", () => {
+  document.getElementById("popup").classList.add("hidden");
+});
+
+
+
+
+window.evaluarRespuesta = function ({ seleccionada, correcta, puntos, updateScore, user }) {
+  const popup = document.getElementById("popup-number");
+  if (!popup) return;
+
+  popup.innerHTML = "";
+
+  const isCorrect = seleccionada === correcta;
+  let mensaje = "";
+
+  if (isCorrect) {
+    user.puntajeTotal += parseInt(puntos) || 0;
+    updateScore(user.puntajeTotal);
+    mensaje = `✅ ¡Correcto! Ganaste ${puntos} punto(s).<br>`;
+  } else {
+    mensaje = `❌ Incorrecto. La respuesta correcta era "<strong>${correcta.toUpperCase()}</strong>".<br>`;
+    const img = document.createElement("img");
+    img.src = "assets/perro.jpg";
+    img.alt = "Perro triste";
+    img.style.width = "150px";
+    img.style.marginTop = "10px";
+    popup.appendChild(img);
+  }
+
+  const resultado = document.createElement("div");
+  resultado.innerHTML = "<br>" + mensaje + `Puntaje acumulado: <strong>${user.puntajeTotal}</strong>`;
+  popup.appendChild(resultado);
+};
+
+
