@@ -347,8 +347,6 @@ function onLogin(usuario) {
 }
 
 
-
-// Crear espiral
 const board = document.querySelector('.board');
 const circles = [];
 
@@ -367,17 +365,55 @@ function createSpiral(total, startRadius, radiusStep, startAngle, angleStep, sta
     circle.style.left = `${x}px`;
     circle.style.top = `${y}px`;
 
+    // Tamaño decreciente
+    const size = 60 - (i * 0.8);
+    circle.style.width = `${size}px`;
+    circle.style.height = `${size}px`;
+
+    // Degradado de rojo
+    const redIntensity = 255 - i * 5;
+    circle.style.backgroundColor = `rgb(${Math.max(redIntensity, 120)}, 20, 20)`;
+
+    // Estilos generales
+    circle.style.position = 'absolute';
+    circle.style.borderRadius = '50%';
+    circle.style.display = 'flex';
+    circle.style.flexDirection = 'column';
+    circle.style.alignItems = 'center';
+    circle.style.justifyContent = 'center';
+    circle.style.color = 'white';
+    circle.style.fontFamily = 'Arial, sans-serif';
+    circle.style.fontWeight = 'bold';
+    circle.style.transition = 'box-shadow 0.2s ease, transform 0.2s ease';
+    circle.style.textAlign = 'center';
+
+    // 🏁 Centro con banderas (igual que antes)
+  const centerContainer = document.createElement('div');
+  centerContainer.className = 'centerpiece';
+
+  const flagMX = document.createElement('img');
+  flagMX.src = 'assets/mx.svg';
+  flagMX.style.width = '36px';
+
+  const flagUS = document.createElement('img');
+  flagUS.src = 'assets/us.svg';
+  flagUS.style.width = '36px';
+centerContainer.appendChild(flagMX);
+  centerContainer.appendChild(flagUS);
+  board.appendChild(centerContainer);
+
+    // Contenido del círculo
     const number = startNumber + i;
     const points = pointStart - i * pointStep;
-
     circle.innerHTML = `<span>${number}</span><small>${points}pt</small>`;
+
     board.appendChild(circle);
     circles.push(circle);
   }
 }
 
-
 createSpiral(36, 60, 9, Math.PI * 1.5, 0.45, 1, 500, 10);
+
 
 let isSpinning = false;
 const resultDisplay = document.getElementById('result');

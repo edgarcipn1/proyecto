@@ -11,10 +11,8 @@
     position: relative;
     width: 800px;   /* antes 500px */
     height: 800px;  /* antes 500px */
-    background: radial-gradient(circle, #ffe0b2, #ef6c00);
     overflow: hidden;
     border-radius: 50%;
-    border: 2px solid red;
     
   }
 
@@ -41,8 +39,8 @@
 
   .centerpiece {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 45%;
+  left: 45%;
   transform: translate(-50%, -50%);
   font-size: 40px;
 }
