@@ -486,9 +486,9 @@ function iniciarGiro() {
         popup.innerHTML = `
           🎯 Número: <strong>${result}</strong><br><br>
           <strong>${pregunta["pregunta"]}</strong><br>
-          <button id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
-          <button id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
-          <button id="btn-c">C) ${pregunta["respuesta c"]}</button>
+          <button class="button-quiz" id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
+          <button class="button-quiz" id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
+          <button class="button-quiz" id="btn-c">C) ${pregunta["respuesta c"]}</button>
         `;
 
         ["a", "b", "c"].forEach(op => {
