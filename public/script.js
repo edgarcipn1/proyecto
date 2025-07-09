@@ -1,7 +1,6 @@
 
 let user = {id:null, puntajeTotal: 0}; // Simulación de usuario
 let listOfUsers = []; // Lista de usuarios
-let lenguaje = 'es'; // Idioma por defecto
 let isLoggedIn = !!user?.id ;
 
 const stateListeners = [];
@@ -26,13 +25,40 @@ const appState = new Proxy(
   }
 );
 
+
 function onAppStateChange(callback) {
   stateListeners.push(callback);
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/usuarios')
+    .then((res) => res.json())
+    .then((data) => listOfUsers.push(...data));
+
+  fetch('/cuestionario')
+    .then((res) => res.json())
+    .then((data) => quiz.push(...data));
+});
+
+onAppStateChange((key, value) => {
+  if (key === 'user' || key === 'lenguaje') {
+    console.log("App state changed:", appState.lenguaje) ;
+    renderNavbar();
+  }
+
+  const spinBtn = document.getElementById('spinButton');
+  if (spinBtn) {
+    spinBtn.style.display = appState.user?.id ? 'block' : 'none';
+  }
+});
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  console.log('entro de nuevo')
+  renderNavbar();
+  setActiveFlag(appState.lenguaje);
 
   // Cargar usuarios desde el backend
   fetch('/usuarios')
@@ -52,53 +78,35 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-
+    
 });
 
 
 
-onAppStateChange((key, value) => {
-  if (key === 'user' || key === 'lenguaje') {
-    renderNavbar();
-  }
-   const spinBtn = document.getElementById("spinButton");
-    if (value && value.id) {
-      spinBtn.style.display = "block";
-    } else {
-      spinBtn.style.display = "none";
-    }
-});
 
 
 
-renderNavbar();
 function renderNavbar() {
-  const container = document.getElementById("navbar-container");
+  const container = document.getElementById('navbar-container');
   if (!container) return;
 
-  // Elimina navbar previo si existe
-  const navbarOld = document.getElementById("navbar");
+  const navbarOld = document.getElementById('navbar');
   if (navbarOld) navbarOld.remove();
 
   const isLoggedIn = !!appState.user;
 
-
-
-  // Elimina navbar previo si existe
-  if (navbarOld) navbarOld.remove();
-
-  // Crea el nuevo navbar
-  const navbar = document.createElement("div");
-  navbar.id = "navbar";
-  navbar.style.display = "flex";
-  navbar.style.justifyContent = "space-between";
-  navbar.style.alignItems = "center";
-  navbar.style.background = "#d32f2f";
-  navbar.style.color = "white";
-  navbar.style.padding = "10px 20px";
-  navbar.style.fontFamily = "Arial, sans-serif";
-  navbar.style.fontSize = "16px";
-
+  const navbar = document.createElement('div');
+  navbar.id = 'navbar';
+  navbar.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #d32f2f;
+    color: white;
+    padding: 10px 20px;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+  `;
 
   navbar.innerHTML = `
     <div class="navbar-left">
@@ -109,7 +117,7 @@ function renderNavbar() {
       <strong id="welcome-message">
         ${
           !isLoggedIn
-            ? lenguaje === "es"
+            ? appState.lenguaje === 'es'
               ? "Bienvenido al hackatón 2025"
               : "Welcome to the Hackathon 2025"
             : `<strong>ID de empleado:</strong> ${appState.user.id} <strong>Puntos:</strong> <span id="score">${appState.user.puntos}</span>  <strong>Intentos:</strong> <span id="attempts">${appState.user.intentos}</span>`
@@ -119,7 +127,7 @@ function renderNavbar() {
     <div class="navbar-right">
       ${
         !isLoggedIn
-          ? `<button class="button-login"> Login</button>`
+          ? `<button class="button-login">Login</button>`
           : `<button class="button-logout">Logout</button>`
       }
     </div>
@@ -127,52 +135,49 @@ function renderNavbar() {
 
   container.appendChild(navbar);
 
-  // Activar bandera seleccionada
-  setActiveFlag(lenguaje);
 
-  // Listeners de idioma
-  document.getElementById("flag-mx").addEventListener("click", () => {
-      setActiveFlag('es');
+  document.getElementById('flag-mx')?.addEventListener('click', () => setActiveFlag('es'));
+  document.getElementById('flag-us')?.addEventListener('click', () => setActiveFlag('en'));
 
-  
-  });
+  pintarBanderaActiva(appState.lenguaje);
 
-  document.getElementById("flag-us").addEventListener("click", () => {
-  setActiveFlag('en');
-
-  
-  });
-
-    const loginBtn = document.querySelector(".button-login");
+  const loginBtn = document.querySelector('.button-login');
   if (loginBtn) {
-    loginBtn.addEventListener("click", () => {
-      crearPopupLogin(appState.lenguaje, onLogin);
+    loginBtn.addEventListener('click', () => {
+      crearPopupLogin();
     });
   }
-  const logoutBtn = document.querySelector(".button-logout");
+
+  const logoutBtn = document.querySelector('.button-logout');
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
+    logoutBtn.addEventListener('click', () => {
       appState.user = null;
       appState.puntos = 0;
       appState.intentos = 0;
-      renderNavbar();
     });
   }
 }
+// ✅ Esta solo modifica el DOM (no toca appState)
+function pintarBanderaActiva(lang) {
+  const mx = document.getElementById('flag-mx');
+  const us = document.getElementById('flag-us');
 
+  mx?.classList.remove('active-flag');
+  us?.classList.remove('active-flag');
+
+  if (lang === 'es') mx?.classList.add('active-flag');
+  if (lang === 'en') us?.classList.add('active-flag');
+}
+
+// 🔁 Esta sí cambia el estado global
 function setActiveFlag(lang) {
-  const mx = document.getElementById("flag-mx");
-  const us = document.getElementById("flag-us");
-
-  mx.classList.remove("active-flag");
-  us.classList.remove("active-flag");
-
-  if (lang === "es") mx.classList.add("active-flag");
-  if (lang === "en") us.classList.add("active-flag");
+  appState.lenguaje = lang;
 }
 
 
-function crearPopupLogin(lenguaje = "es", onLogin = () => {}) {
+
+
+function crearPopupLogin() {
   //if (document.getElementById("login-modal")) return; // Evitar duplicados
 
   const textos = {
@@ -194,7 +199,7 @@ function crearPopupLogin(lenguaje = "es", onLogin = () => {}) {
     },
   };
 
-  const t = textos[lenguaje] || textos.es;
+  const t = textos[appState.lenguaje] || textos.es;
 
   const modal = document.createElement("div");
   modal.id = "login-modal";
@@ -306,7 +311,6 @@ modal.innerHTML = `
     } else if (usersList.includes(usuario)) {
       
       const getUser = listOfUsers.find(u => u.id === usuario);
-      console.log("getUser", getUser);
       appState.user = getUser;
 
       listOfUsers.push(usuario);
@@ -315,9 +319,7 @@ modal.innerHTML = `
       modal.remove();
       onLogin({ 
         id: usuario,
-        name: name,
-        puntos: 0,
-        intentos: 0,
+        name: name
       });
     }
   };
@@ -325,23 +327,20 @@ modal.innerHTML = `
  
 }
 
-function onLogin( usuario ) {
+function onLogin(usuario) {
   fetch('/agregar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams( usuario )
+    body: new URLSearchParams(usuario)
   })
   .then(res => {
-    if (res.ok) {
-      appState.user = {
-        id: usuario.id,
-        name: usuario.name,
-        puntos: 0,
-        intentos: 0
-      };
-
-
-    } else {
+    console.log("Respuesta del servidor:", res);
+    console.log("Usuario a agregar:", usuario);
+     if (res.ok) {
+    appState.user = { ...usuario, puntos: 0, intentos: 0 };
+    renderNavbar(); // Evita múltiples renders
+    setActiveFlag(appState.lenguaje);
+  }else {
       alert("Error al agregar usuario");
     }
   });
