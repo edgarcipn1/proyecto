@@ -35,10 +35,10 @@ app.get('/cuestionario', (req, res) => {
 
 // Endpoint para agregar nuevo usuario
 app.post('/agregar', (req, res) => {
-  const { name, id } = req.body;
+  const { name, id, surname } = req.body;
   const date = new Date().toISOString();
-  const nuevo = `\n${id},${name},0,0,${date}`;
-  
+  const nuevo = `\n${id},${name},${surname},0,0,${date}`;
+
   fs.appendFile(CSV_PATH, nuevo, (err) => {
     if (err) return res.status(500).send('Error al guardar');
     res.redirect('/');

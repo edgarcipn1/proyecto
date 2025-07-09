@@ -31,6 +31,11 @@ function onAppStateChange(callback) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  renderNavbar();
+  setActiveFlag(appState.lenguaje);
+
+  // Cargar usuarios y cuestionario desde el backend
   fetch('/usuarios')
     .then((res) => res.json())
     .then((data) => listOfUsers.push(...data));
@@ -42,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 onAppStateChange((key, value) => {
   if (key === 'user' || key === 'lenguaje') {
-    console.log("App state changed:", appState.lenguaje) ;
     renderNavbar();
   }
 
@@ -54,32 +58,6 @@ onAppStateChange((key, value) => {
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
-
-  console.log('entro de nuevo')
-  renderNavbar();
-  setActiveFlag(appState.lenguaje);
-
-  // Cargar usuarios desde el backend
-  fetch('/usuarios')
-    .then(res => res.json())
-    .then(data => {
-      data.forEach(user => {
-        listOfUsers.push(user);
-      });
-    });
-
-      // Cargar usuarios desde el backend
-  fetch('/cuestionario')
-    .then(res => res.json())
-    .then(data => {
-      data.forEach(item => {
-        quiz.push(item);
-      });
-    });
-
-    
-});
 
 
 
@@ -120,7 +98,7 @@ function renderNavbar() {
             ? appState.lenguaje === 'es'
               ? "Bienvenido al hackatón 2025"
               : "Welcome to the Hackathon 2025"
-            : `<strong>ID de empleado:</strong> ${appState.user.id} <strong>Puntos:</strong> <span id="score">${appState.user.puntos}</span>  <strong>Intentos:</strong> <span id="attempts">${appState.user.intentos}</span>`
+            : `<strong>ID de empleado:</strong> ${appState.user.id} <strong>Puntos:</strong> <span id="score">${formatNumberWithCommas(appState.user.puntos)}</span>  <strong>Intentos:</strong> <span id="attempts">${formatNumberWithCommas(appState.user.intentos)}</span>`
         }
       </strong>
     </div>
@@ -183,16 +161,18 @@ function crearPopupLogin() {
   const textos = {
     es: {
       titulo: "Registro a hackatón",
-      usuario: "Id de usuario",
-      name : "Nombre",
+      usuario: "ID de empleado",
+      name : "Nombre(s)",
+      surname: "Apellido",
       ingresar: "Ingresar",
       cerrar: "Cerrar",
       error: "Por favor ingresa todos los campos.",
     },
     en: {
-      titulo: "Sign In",
-      usuario: "Username",
-      name : "Name",
+      titulo: "Register for Hackathon",
+      usuario: "Employee ID",
+      name : "Name(s)",
+      surname: "Surname",
       ingresar: "Login",
       cerrar: "Close",
       error: "Please fill in all fields.",
@@ -237,9 +217,26 @@ modal.innerHTML = `
 
     <label style="font-size: 14px; color: #333;">${t.usuario}</label>
     <input id="login-clave" 
-      type="number" 
-      inputmode="numeric" 
-      placeholder="●●●●●●●●" 
+  type="text" 
+  inputmode="numeric" 
+  placeholder="●●●●●●●●" 
+  maxlength="8"
+  style="
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    outline: none;
+    transition: border 0.3s ease;
+  "
+/>
+    <label style="font-size: 14px; color: #333;">${t.name}</label>
+    <input id="login-name" 
+      type="text" 
+      inputmode="text" 
+      placeholder="name" 
       style="
         width: 100%;
         padding: 10px 12px;
@@ -251,11 +248,11 @@ modal.innerHTML = `
         transition: border 0.3s ease;
       "
     />
-    <label style="font-size: 14px; color: #333;">${t.name}</label>
-    <input id="login-name" 
-      type="string" 
-      inputmode="string" 
-      placeholder="name" 
+      <label style="font-size: 14px; color: #333;">${t.name}</label>
+    <input id="login-surname" 
+      type="text" 
+      inputmode="text" 
+      placeholder="surname" 
       style="
         width: 100%;
         padding: 10px 12px;
@@ -300,8 +297,10 @@ modal.innerHTML = `
   document.getElementById("login-cerrar").onclick = () => modal.remove();
 
   document.getElementById("login-enviar").onclick = () => {
-     const usuario = document.getElementById("login-clave").value.trim();
+    
+    const usuario = document.getElementById("login-clave").value.trim();
     const name =document.getElementById("login-name").value.trim();
+    const surname = document.getElementById("login-surname").value.trim();
     
     const usersList = listOfUsers.map(u => u.id);
 
@@ -334,8 +333,6 @@ function onLogin(usuario) {
     body: new URLSearchParams(usuario)
   })
   .then(res => {
-    console.log("Respuesta del servidor:", res);
-    console.log("Usuario a agregar:", usuario);
      if (res.ok) {
     appState.user = { ...usuario, puntos: 0, intentos: 0 };
     renderNavbar(); // Evita múltiples renders
@@ -438,7 +435,7 @@ spinButton.addEventListener('click', () => {
         renderNavbar();
         iniciarGiro(); // 🎯 Solo gira si acepta
       } else {
-        alert("No tienes suficientes puntos para girar.");
+        alert(`${appState.lenguaje === "es" ? "No tienes suficientes puntos para girar." : "You don't have enough points to spin."}`);
       }
     });
   }
@@ -451,7 +448,7 @@ function iniciarGiro() {
   isSpinning = true;
   resultDisplay.textContent = '';
 
-  const totalSteps = Math.floor(Math.random() * 20);
+  const totalSteps = Math.floor(Math.random() * 20)+50;
   let currentIndex = 0;
   let step = 0;
   let delay = 100;
@@ -474,17 +471,16 @@ function iniciarGiro() {
 
       const activelenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
 
-      // FORZADO A RESULT = 1 (puedes eliminar esta línea si ya estás girando realmente)
-      result = 1;
+
 
       const pregunta = quiz.find(p => +p.index === result && p.lenguaje === activelenguaje);
       const popup = document.getElementById("popup-number");
 
       if (!pregunta) {
-        popup.innerHTML = `El número ganador es: ${result} <br>❌ Sin pregunta disponible.`;
+        popup.innerHTML = `${appState.lenguaje === "es" ? "El número ganador es" : "The winning number is"}: ${result} <br>❌ ${appState.lenguaje === "es" ? "Sin pregunta disponible." : "No question available."}`;
       } else {
         popup.innerHTML = `
-          🎯 Número: <strong>${result}</strong><br><br>
+           ${appState.lenguaje === "es" ? "Número" : "Number"}: <strong>${result}</strong><br><br>
           <strong>${pregunta["pregunta"]}</strong><br>
           <button class="button-quiz" id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
           <button class="button-quiz" id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
@@ -526,11 +522,11 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
   if (isCorrect) {
     appState.user.puntos += puntos;
     appState.user.intentos += 1;
-    mensaje = `✅ ¡Correcto! Ganaste ${puntos} punto(s).<br>`;
+    mensaje = `✅ ${appState.lenguaje === "es" ? "¡Correcto!" : "Correct!"} ${appState.lenguaje === "es" ? "Ganaste" : "You won"} ${puntos} ${appState.lenguaje === "es" ? "punto(s)." : "point(s)."}<br>`;
     renderNavbar();
 
   } else {
-    mensaje = `❌ <strong>Incorrecto. </strong>.<br>`;
+    mensaje = `❌ ${appState.lenguaje === "es" ? "Incorrecto. " : "Incorrect. "}<strong>Incorrecto. </strong>.<br>`;
     const img = document.createElement("img");
     img.src = "assets/perro.jpg";
     img.alt = "Perro triste";
@@ -549,7 +545,7 @@ window.evaluarRespuesta = function ({ seleccionada, correcta, puntos }) {
 });
 
   const resultado = document.createElement("div");
-  resultado.innerHTML = "<br>" + mensaje + `Puntaje acumulado: <strong>${appState?.user?.puntos || 0}</strong>`;
+  resultado.innerHTML = "<br>" + mensaje + `${appState.lenguaje === "es" ? "Puntaje acumulado" : "Total score"}: <strong>${appState?.user?.puntos || 0}</strong>`;
   popup.appendChild(resultado);
 };
 
@@ -588,11 +584,11 @@ function mostrarPopupPago(onConfirmar) {
 
   popup.innerHTML = `
     <div style="background:white; padding:30px; border-radius:10px; max-width:350px; text-align:center;">
-      <h3 style="color:#c5002e;">⚠️ Atención</h3>
-      <p>Has consumido tus giros gratis.<br>¿Deseas girar por <strong>100 puntos</strong>?</p>
+      <h3 style="color:#c5002e;">⚠️ ${appState.lenguaje === "es" ? "Atención" : "Attention"}</h3>
+      <p>${appState.lenguaje === "es" ? "Has consumido tus giros gratis." : "You have used your free spins."}<br>${appState.lenguaje === "es" ? "¿Deseas girar por" : "Do you want to spin for"} <strong>100 puntos</strong>?</p>
       <div style="margin-top:20px; display:flex; justify-content:space-around;">
-        <button id="popup-cancelar" style="padding:8px 16px;">Cancelar</button>
-        <button id="popup-confirmar" style="padding:8px 16px; background-color:#c5002e; color:white; border:none;">Girar</button>
+        <button id="popup-cancelar" style="padding:8px 16px;">${appState.lenguaje === "es" ? "Cancelar" : "Cancel"}</button>
+        <button id="popup-confirmar" style="padding:8px 16px; background-color:#c5002e; color:white; border:none;">${appState.lenguaje === "es" ? "Girar" : "Spin"}</button>
       </div>
     </div>
   `;
@@ -609,4 +605,9 @@ function mostrarPopupPago(onConfirmar) {
      // Ejecutar la acción de confirmación
   };
 }
+
+function formatNumberWithCommas(number) {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 
