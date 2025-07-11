@@ -23,10 +23,17 @@ app.get('/usuarios', (req, res) => {
   const hoy = ahora.toISOString().split('T')[0]; // YYYY-MM-DD
   const horaActual = ahora.getHours();
 
+
   fs.createReadStream(path.join(__dirname, 'data', 'usuarios.csv'))
     .pipe(csv())
     .on('data', (row) => {
       try {
+        // Validar campos requeridos
+        if (!row.id || !row.puntos || !row.fecha || !row.hora) {
+          console.warn('Fila incompleta o vacía:', row);
+          return;
+        }
+
         const horaPartes = row.hora.split(':');
         const horaFila = parseInt(horaPartes[0], 10);
 
@@ -54,6 +61,7 @@ app.get('/usuarios', (req, res) => {
       res.status(500).send('Error leyendo CSV');
     });
 });
+
 
 
 app.get('/cuestionario', (req, res) => {

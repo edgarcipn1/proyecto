@@ -32,6 +32,7 @@ const textosRanking = {
     id: "ID",
     puntos: "Puntos",
     fecha: "Fecha",
+    hora: "Hora",
     cerrar: "✖"
   },
   en: {
@@ -39,6 +40,7 @@ const textosRanking = {
     id: "Employee ID",
     puntos: "Points",
     fecha: "Date",
+    hora: "Time",
     cerrar: "✖"
   }
 };
@@ -607,6 +609,8 @@ document.getElementById('mostrar-ranking').addEventListener('click', () => {
       <th>${t.id}</th>
       <th>${t.puntos}</th>
       <th>${t.fecha}</th>
+      <th>${t.hora}</th>
+
     </tr>
   `;
 
@@ -624,7 +628,8 @@ document.getElementById('mostrar-ranking').addEventListener('click', () => {
         tr.innerHTML = `
           <td>${user.id}</td>
           <td>${Number(user.puntajeTotal || 0).toLocaleString()}</td>
-          <td>${new Date(user.fecha).toLocaleDateString()}</td>
+          <td>${user.fecha}</td>
+          <td>${user.hora}</td>
         `;
         tbody.appendChild(tr);
       });
