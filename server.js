@@ -16,14 +16,45 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 
-// Endpoint para obtener los datos del CSV
 app.get('/usuarios', (req, res) => {
   const results = [];
-  fs.createReadStream(CSV_PATH)
+
+  const ahora = new Date();
+  const hoy = ahora.toISOString().split('T')[0]; // YYYY-MM-DD
+  const horaActual = ahora.getHours();
+
+  fs.createReadStream(path.join(__dirname, 'data', 'usuarios.csv'))
     .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', () => res.json(results));
+    .on('data', (row) => {
+      try {
+        const horaPartes = row.hora.split(':');
+        const horaFila = parseInt(horaPartes[0], 10);
+
+        if (row.fecha === hoy && horaFila === horaActual) {
+          results.push({
+            id: row.id,
+            puntajeTotal: parseInt(row.puntos) || 0,
+            fecha: row.fecha,
+            hora: row.hora,
+          });
+        }
+      } catch (e) {
+        console.error('Error procesando fila:', row, e);
+      }
+    })
+    .on('end', () => {
+      const top10 = results
+        .sort((a, b) => b.puntajeTotal - a.puntajeTotal)
+        .slice(0, 10);
+
+      res.json(top10);
+    })
+    .on('error', (err) => {
+      console.error('Error al leer CSV:', err);
+      res.status(500).send('Error leyendo CSV');
+    });
 });
+
 
 app.get('/cuestionario', (req, res) => {
   const results = [];

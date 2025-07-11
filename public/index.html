@@ -10,6 +10,9 @@
 
 
 <div id="navbar-container"></div>
+<div style="text-align: center; margin-top: 10px;">
+    <button id="mostrar-ranking" class="ranking-btn">🏆Ranking</button>
+  </div>
 <div class="board"></div>
 <button id="spinButton" style="display: none;">Girar</button>
 
@@ -26,6 +29,32 @@
       
     </div>
   </div>
+
+  
+
+  
+<div id="ranking-modal" class="ranking-modal hidden">
+  <div class="ranking-content">
+    <button id="cerrar-ranking" class="close-btn">✖</button>
+    <h2>🏅 Ranking</h2>
+    <div class="ranking-table-container">
+      <table id="tabla-usuarios">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Puntos</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Se rellena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
 
 
   <script src="https://d3js.org/d3.v7.min.js"></script>

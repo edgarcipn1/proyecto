@@ -241,3 +241,126 @@
   outline: none;
   box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.4);
 }
+
+.hidden {
+  display: none;
+}
+
+.tabla-container {
+  margin: 20px auto;
+  max-width: 600px;
+  background: #fff5f5;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.tabla-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-container th,
+.tabla-container td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabla-container th {
+  background-color: #c5002e;
+  color: white;
+}
+
+
+.ranking-btn {
+  background-color: #c5002e;
+  color: white;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: background 0.3s ease;
+  position: fixed;
+  top: 5%;
+  right: 50%;
+}
+.ranking-btn:hover {
+  background-color: #a30026;
+}
+
+.ranking-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+
+}
+
+.ranking-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  position: relative;
+  animation: fadeInUp 0.3s ease;
+}
+
+.ranking-table-container {
+  overflow-x: auto;
+}
+
+.ranking-content h2 {
+  margin-top: 0;
+  text-align: center;
+  color: #c5002e;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #c5002e;
+}
+
+.ranking-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ranking-content th, .ranking-content td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.ranking-content th {
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

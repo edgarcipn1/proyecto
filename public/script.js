@@ -26,6 +26,29 @@ const appState = new Proxy(
 );
 
 
+const textosRanking = {
+  es: {
+    titulo: "🏅 Ranking",
+    id: "ID",
+    puntos: "Puntos",
+    fecha: "Fecha",
+    cerrar: "✖"
+  },
+  en: {
+    titulo: "🏅 Ranking",
+    id: "Employee ID",
+    puntos: "Points",
+    fecha: "Date",
+    cerrar: "✖"
+  }
+};
+
+const textSpin = {
+  es: "Girar",
+  en: "Spin"
+};
+
+
 function onAppStateChange(callback) {
   stateListeners.push(callback);
 }
@@ -52,6 +75,7 @@ onAppStateChange((key, value) => {
 
   const spinBtn = document.getElementById('spinButton');
   if (spinBtn) {
+    spinBtn.textContent = appState.lenguaje === 'es' ? '🎰 Girar' : '🎰 Spin';
     spinBtn.style.display = appState.user?.id ? 'block' : 'none';
   }
 });
@@ -567,6 +591,55 @@ function actualizarUsuario( newState) {
       console.error("Error actualizando usuario:", err);
     });
 }
+
+document.getElementById('mostrar-ranking').addEventListener('click', () => {
+  const lenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
+  const t = textosRanking[lenguaje];
+
+  // Mostrar el modal
+  const modal = document.getElementById('ranking-modal');
+  modal.classList.remove('hidden');
+
+  // Traducir textos
+  document.querySelector('.ranking-content h2').textContent = t.titulo;
+  document.querySelector('#tabla-usuarios thead').innerHTML = `
+    <tr>
+      <th>${t.id}</th>
+      <th>${t.puntos}</th>
+      <th>${t.fecha}</th>
+    </tr>
+  `;
+
+  // Cargar datos
+  fetch('/usuarios')
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector('#tabla-usuarios tbody');
+      tbody.innerHTML = '';
+
+      data.sort((a, b) => (b.puntajeTotal || 0) - (a.puntajeTotal || 0));
+
+      data.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.id}</td>
+          <td>${Number(user.puntajeTotal || 0).toLocaleString()}</td>
+          <td>${new Date(user.fecha).toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error('Error al cargar el ranking:', err);
+    });
+});
+
+// Cerrar el modal
+document.getElementById('cerrar-ranking').addEventListener('click', () => {
+  document.getElementById('ranking-modal').classList.add('hidden');
+});
+
+
 
 
 function mostrarPopupPago(onConfirmar) {
