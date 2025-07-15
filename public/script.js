@@ -467,14 +467,12 @@ spinButton.addEventListener('click', () => {
   }
 });
 
-
-
 function iniciarGiro() {
   if (isSpinning) return;
   isSpinning = true;
   resultDisplay.textContent = '';
 
-  const totalSteps = Math.floor(Math.random() * 20)+50;
+  const totalSteps = Math.floor(Math.random() * 20) + 0; // asegúrate de sumar algo útil
   let currentIndex = 0;
   let step = 0;
   let delay = 100;
@@ -492,39 +490,53 @@ function iniciarGiro() {
     } else {
       isSpinning = false;
 
-      let result = parseInt(circle.querySelector('span').textContent);
+      const result = parseInt(circle.querySelector('span').textContent);
       resultDisplay.textContent = '';
 
-      const activelenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
+      // ✨ Aplica efecto de brillo
+      circle.classList.add('highlight-winner');
 
+      // Espera a que termine la animación del brillo
+      const handleTransitionEnd = () => {
+        circle.removeEventListener('transitionend', handleTransitionEnd);
 
+        const activelenguaje = document.getElementById("flag-mx").classList.contains("active-flag") ? "es" : "en";
+        const pregunta = quiz.find(p => +p.index === result && p.lenguaje === activelenguaje);
+        const popup = document.getElementById("popup-number");
 
-      const pregunta = quiz.find(p => +p.index === result && p.lenguaje === activelenguaje);
-      const popup = document.getElementById("popup-number");
+        if (!pregunta) {
+          popup.innerHTML = `${appState.lenguaje === "es" ? "El número ganador es" : "The winning number is"}: ${result} <br>❌ ${appState.lenguaje === "es" ? "Sin pregunta disponible." : "No question available."}`;
+        } else {
+          popup.innerHTML = `
+            ${appState.lenguaje === "es" ? "Número" : "Number"}: <strong>${result}</strong><br><br>
+            <strong>${pregunta["pregunta"]}</strong><br>
+            <button class="button-quiz" id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
+            <button class="button-quiz" id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
+            <button class="button-quiz" id="btn-c">C) ${pregunta["respuesta c"]}</button>
+          `;
 
-      if (!pregunta) {
-        popup.innerHTML = `${appState.lenguaje === "es" ? "El número ganador es" : "The winning number is"}: ${result} <br>❌ ${appState.lenguaje === "es" ? "Sin pregunta disponible." : "No question available."}`;
-      } else {
-        popup.innerHTML = `
-           ${appState.lenguaje === "es" ? "Número" : "Number"}: <strong>${result}</strong><br><br>
-          <strong>${pregunta["pregunta"]}</strong><br>
-          <button class="button-quiz" id="btn-a">A) ${pregunta["respuesta a"]}</button><br>
-          <button class="button-quiz" id="btn-b">B) ${pregunta["respuesta b"]}</button><br>
-          <button class="button-quiz" id="btn-c">C) ${pregunta["respuesta c"]}</button>
-        `;
-
-        ["a", "b", "c"].forEach(op => {
-          document.getElementById(`btn-${op}`).addEventListener("click", () => {
-            window.evaluarRespuesta({
-              seleccionada: op,
-              correcta: pregunta["correcta"],
-              puntos: parseInt(pregunta["puntos"]),
+          ["a", "b", "c"].forEach(op => {
+            document.getElementById(`btn-${op}`).addEventListener("click", () => {
+              window.evaluarRespuesta({
+                seleccionada: op,
+                correcta: pregunta["correcta"],
+                puntos: parseInt(pregunta["puntos"]),
+              });
             });
           });
-        });
-      }
+        }
 
-      document.getElementById("popup").classList.remove("hidden");
+        // ✅ Mostrar popup solo después de que termine la animación
+        document.getElementById("popup").classList.remove("hidden");
+
+        // 🔅 Opcional: quitar el efecto de brillo después de un tiempo
+        setTimeout(() => {
+          circle.classList.remove('highlight-winner');
+        }, 500);
+      };
+
+      // Escucha la transición (del brillo) antes de mostrar el popup
+      circle.addEventListener('transitionend', handleTransitionEnd, { once: true });
     }
   }
 

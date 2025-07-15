@@ -32,7 +32,7 @@
     font-weight: bold;
     font-size: 14px;
     transform: translate(-50%, -50%);
-    transition: transform 0.1s ease, background 0.1s ease;
+    transition: box-shadow 0.5s ease, transform 0.5s ease;
 
   }
 
@@ -363,4 +363,9 @@
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.circle.highlight-winner {
+  box-shadow: 0 0 20px 10px gold;
+  transform: scale(1.2);
 }
